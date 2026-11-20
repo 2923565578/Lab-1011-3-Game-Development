@@ -1,0 +1,7 @@
+{
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": false,
+  "python.terminal.executeInFileDir": true,
+  "python.analysis.extraPaths": ["${workspaceFolder}"],
+  "editor.rulers": [100]
+}

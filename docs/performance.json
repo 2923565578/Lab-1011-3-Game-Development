@@ -1,0 +1,70 @@
+{
+  "quality": [
+    {
+      "preset": "FAST",
+      "scale": 0.2,
+      "width": 250,
+      "height": 180,
+      "triangles": 1352,
+      "pixels": 62176,
+      "avg_ms": 63.39,
+      "median_ms": 62.78,
+      "fps": 15.8
+    },
+    {
+      "preset": "BALANCED",
+      "scale": 0.3,
+      "width": 375,
+      "height": 270,
+      "triangles": 1352,
+      "pixels": 140098,
+      "avg_ms": 99.17,
+      "median_ms": 97.94,
+      "fps": 10.1
+    },
+    {
+      "preset": "HIGH",
+      "scale": 0.5,
+      "width": 625,
+      "height": 450,
+      "triangles": 1352,
+      "pixels": 386856,
+      "avg_ms": 233.58,
+      "median_ms": 231.94,
+      "fps": 4.3
+    },
+    {
+      "preset": "NATIVE",
+      "scale": 1.0,
+      "width": 1250,
+      "height": 900,
+      "triangles": 1352,
+      "pixels": 1549075,
+      "avg_ms": 740.48,
+      "median_ms": 733.93,
+      "fps": 1.4
+    }
+  ],
+  "extensions": [
+    {
+      "setting": "fog on, nearest",
+      "avg_ms": 212.8,
+      "fps": 4.7
+    },
+    {
+      "setting": "fog off, nearest",
+      "avg_ms": 215.95,
+      "fps": 4.6
+    },
+    {
+      "setting": "fog on, bilinear",
+      "avg_ms": 444.24,
+      "fps": 2.3
+    },
+    {
+      "setting": "fog off, bilinear",
+      "avg_ms": 444.6,
+      "fps": 2.2
+    }
+  ]
+}

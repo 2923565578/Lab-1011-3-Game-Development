@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "1. 运行 3D 游戏 (game3d.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/game3d.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "2. 重新生成实验截图",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/capture_screenshots.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "3. 运行原始 2D 版本 (对照用)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/original_2d/Start2Dto3D.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/original_2d",
+      "justMyCode": true
+    }
+  ]
+}
