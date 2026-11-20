@@ -42,9 +42,10 @@ python -m pip install -r requirements.txt
 python game3d.py
 ```
 
-No assets are loaded from disk; the window starts at 1250×900, can be resized or
-maximised freely (the framebuffer follows the window size and keeps its aspect
-ratio), and the internal framebuffer resolution is cycled with F5.
+No assets are loaded from disk; the window starts at 1250×900 and can be resized
+or maximised freely. The framebuffer follows the window only up to a fixed pixel
+budget (~132k shaded pixels) so resize does not multiply frame time; the explicit
+render presets are cycled with F5.
 
 ### Controls
 
@@ -104,7 +105,23 @@ python tools/benchmark.py                    # regenerate performance tables
 python tools/render_video.py                 # regenerate demo_video.mp4
 ```
 
-## 7. Notes
+## 7. External code, assets and licences
+
+Required submission statement (Handbook 17.1):
+
+* **No external code, models, textures, sounds or fonts are shipped with this
+  project.** Every mesh, texture, shadow, particle and shader-like calculation is
+  generated procedurally in `engine3d.py`, `textures.py` and `game3d.py`.
+* Third-party **libraries** used at runtime: NumPy (BSD-3-Clause), Pygame
+  (LGPL-2.1), Pillow (MIT-CMU), python-docx (MIT, report generation only) and
+  imageio-ffmpeg (BSD-2-Clause, video encoding only). No library provides any of
+  the graded rendering stages — the transforms, clipping, culling, rasterizer,
+  z-buffer, lighting, texture sampling and fog are all original code.
+* HUD text is drawn with the system default font of the machine; no font file is
+  redistributed.
+* Project licence: MIT.
+
+## 8. Notes
 
 * World scale: one grid cell is 50 world units (`CELL = 50`), walls are 40 units
   high and 8 units thick, the maze is 23×15 cells.
