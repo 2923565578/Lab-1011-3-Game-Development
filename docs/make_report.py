@@ -398,8 +398,11 @@ p("Resizing and aspect ratio were tested with the same scene rendered at 16:9 an
   "simply reveals more of the scene, exactly as a real camera would.")
 p("The window itself is freely resizable and can be maximised (F11 toggles fullscreen). "
   "On a resize the HUD caches, the projection and the framebuffer are rebuilt for the new "
-  "size, so the internal render resolution keeps the same fraction of the window and the "
-  "same aspect ratio; the pixel budget is then re-checked by the quality governor. "
+  "size. The internal render resolution follows the window only up to a fixed pixel "
+  "budget (about 132k shaded pixels), so a maximised window keeps the same frame time "
+  "instead of multiplying fill cost, while F5 still exposes the explicit presets used "
+  "for the screenshots. Measured frame time stays at roughly 12-15 FPS from 1250x900 "
+  "up to 1920x1080; without the budget the maximised window fell to about 5 FPS. "
   "Because the framebuffer is deliberately smaller than the window, the final smoothscale "
   "would soften edges, so an optional unsharp mask (key C, a 4-neighbour high-pass pass "
   "over the small framebuffer) restores apparent detail before upscaling. Its cost scales "

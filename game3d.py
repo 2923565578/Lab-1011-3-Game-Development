@@ -59,6 +59,10 @@ QUALITY_LEVELS = (
     ("NATIVE", 1.00),
 )
 RENDER_SCALE = QUALITY_LEVELS[1][1]
+# Upper bound on shaded pixels for interactive play. The window can be resized
+# or maximised freely; above this budget the internal render resolution stops
+# growing so that fill rate (the real bottleneck) stays bounded.
+PIXEL_BUDGET = 132000
 SHARP_UPSCALE = False
 RENDER_W = int(WIDTH * RENDER_SCALE)
 RENDER_H = int(HEIGHT * RENDER_SCALE)
@@ -71,8 +75,8 @@ Q_WINDOW = 50
 Q_COOLDOWN = 2.5
 Q_GRACE = 0.8
 Q_CONFIRM = 3
-Q_SLOW = 1 / 22
-Q_FAST = 1 / 58
+Q_SLOW = 1 / 12
+Q_FAST = 1 / 34
 
 # World size
 CELL = 50
@@ -481,6 +485,12 @@ class Game:
     def _make_renderer(self):
         """(Re)build the framebuffer renderer at the current quality level."""
         s = QUALITY_LEVELS[self.quality][1]
+        # NATIVE is kept exact (screenshots / resolution experiments); every
+        # other preset is clamped so a maximised window cannot multiply the
+        # shaded pixel count.
+        if self.quality < len(QUALITY_LEVELS) - 1:
+            cap = math.sqrt(PIXEL_BUDGET / float(WIDTH * HEIGHT))
+            s = max(0.16, min(s, cap))
         old = getattr(self, "renderer", None)
         r = e3.Renderer(
             max(160, int(WIDTH * s)), max(120, int(HEIGHT * s)),
