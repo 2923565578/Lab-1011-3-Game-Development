@@ -5,7 +5,7 @@ Renders the 2-4 minute demonstration video without opening a window: the same
 game code is stepped headlessly, every frame is piped to ffmpeg (bundled with
 imageio-ffmpeg) and encoded as H.264.
 
-Timeline (approx. 2 min 30 s at 20 fps):
+Timeline (approx. 2 min 30 s at 30 fps):
     0-14    title + orbit around the whole maze (perspective)
     14-26   the same camera in orthographic projection
     26-44   chase camera, walking through the maze
@@ -42,7 +42,7 @@ sys.path.insert(0, ROOT)
 import engine3d as e3
 import game3d as g3
 
-FPS = 20
+FPS = 30
 OUT_W, OUT_H = 1000, 720
 OUT = os.path.join(ROOT, "demo_video.mp4")
 
