@@ -4,28 +4,37 @@ docs/make_report.py
 Builds the English technical report for Lab 10 + Lab 11 (Part A + Part B) from
 the measured data in docs/performance.csv and the screenshots in screenshots/.
 
+【中文说明】
+技术报告自动生成脚本。它把 title/正文/公式/表格/图片按顺序写进一个 Word (.docx)：
+数据来自 docs/performance.csv（benchmark.py 跑出来的真实测量值），
+图片来自 screenshots/（capture_screenshots.py 生成的真实截图）。
+这样报告里每个数字、每张图都能用脚本重新生成，而不是手工拼的。
+注意：本文件是「脚本式」代码，没有包在函数里，导入即执行(从上到下依次生成文档)。
+
     python docs/make_report.py
     -> docs/Technical_Report_Lab10_11.docx
 
 Convert to PDF with Word / LibreOffice afterwards.
+（生成后需要再用 Word 或 LibreOffice 导出成 PDF）
 """
 
 import csv
 import os
 
-from docx import Document
-from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
-from docx.shared import Cm, Pt, RGBColor
+from docx import Document                             # python-docx：操作 .docx 的库
+from docx.enum.table import WD_TABLE_ALIGNMENT        # 表格对齐枚举
+from docx.enum.text import WD_ALIGN_PARAGRAPH         # 段落对齐枚举
+from docx.oxml.ns import qn                           # 用来设置中文字体(w:eastAsia)
+from docx.shared import Cm, Pt, RGBColor              # 单位：厘米、磅、颜色
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SHOTS = os.path.join(ROOT, "screenshots")
-DOCS = os.path.join(ROOT, "docs")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # 项目根目录(本文件在 docs/ 里)
+SHOTS = os.path.join(ROOT, "screenshots")             # 截图目录
+DOCS = os.path.join(ROOT, "docs")                     # 输出目录
 
-doc = Document()
+doc = Document()                                      # 新建一个空白文档
 
 # ---------------------------------------------------------------- page setup
+# 页面设置：A4 纸(21cm × 29.7cm) + 四周页边距
 sec = doc.sections[0]
 sec.page_width = Cm(21.0)
 sec.page_height = Cm(29.7)
@@ -35,13 +44,14 @@ sec.top_margin = Cm(2.0)
 sec.bottom_margin = Cm(1.9)
 
 styles = doc.styles
-normal = styles["Normal"]
+normal = styles["Normal"]                             # 正文默认样式
 normal.font.name = "Calibri"
-normal.font.size = Pt(10.5)
-normal.paragraph_format.space_after = Pt(5)
-normal.paragraph_format.line_spacing = 1.12
-normal._element.rPr.rFonts.set(qn("w:eastAsia"), "Calibri")
+normal.font.size = Pt(10.5)                           # 10.5 磅 = 五号字
+normal.paragraph_format.space_after = Pt(5)           # 段后 5 磅
+normal.paragraph_format.line_spacing = 1.12           # 1.12 倍行距
+normal._element.rPr.rFonts.set(qn("w:eastAsia"), "Calibri")   # 同时设置东亚字体，避免中文回退成宋体
 
+# 三个级别标题的样式：字号/颜色逐级变小变浅，并在段前留白
 for name, size, color in (("Heading 1", 15, (0x1F, 0x3B, 0x57)),
                           ("Heading 2", 12, (0x1F, 0x4E, 0x79)),
                           ("Heading 3", 11, (0x33, 0x33, 0x33))):
@@ -55,27 +65,31 @@ for name, size, color in (("Heading 1", 15, (0x1F, 0x3B, 0x57)),
 
 
 def h(text, level=1):
+    # 加一个标题(level 决定是 H1/H2/H3)
     doc.add_heading(text, level=level)
 
 
 def p(text, bold_lead=None, italic=False):
+    # 加一段正文；bold_lead 是把开头一小段加粗(用于「名词: 解释」这种写法)
     par = doc.add_paragraph()
     if bold_lead:
         run = par.add_run(bold_lead)
         run.bold = True
     run = par.add_run(text)
     run.italic = italic
-    par.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    par.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY        # 两端对齐，看起来更正式
     return par
 
 
 def bullet(text):
+    # 加一条项目符号(圆点)
     par = doc.add_paragraph(text, style="List Bullet")
     par.paragraph_format.space_after = Pt(2)
     return par
 
 
 def eq(text):
+    # 加一个公式段落：Cambria Math 字体 + 斜体 + 居中，模仿数学公式排版
     par = doc.add_paragraph()
     run = par.add_run(text)
     run.font.name = "Cambria Math"
@@ -86,6 +100,7 @@ def eq(text):
 
 
 def caption(text):
+    # 加图片说明(caption)：小字、斜体、灰色、居中
     par = doc.add_paragraph()
     run = par.add_run(text)
     run.italic = True
@@ -96,58 +111,64 @@ def caption(text):
 
 
 def figure(name, width_cm, cap):
+    # 插入单张图片并配说明：图片按指定宽度(厘米)插入，段落居中
     doc.add_picture(os.path.join(SHOTS, name), width=Cm(width_cm))
-    doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER      # 刚插入图片的那个段落居中
     doc.paragraphs[-1].paragraph_format.space_after = Pt(2)
     caption(cap)
 
 
 def pair(left, right, cap_left, cap_right, cap):
+    # 插入「左右并排的两张图」+ 各自小标题 + 一个总说明
+    # 用 2×2 表格实现，第一行放两张图，第二行合并成一格放总说明
     table = doc.add_table(rows=2, cols=2)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     for cell, img, cap_text in ((table.cell(0, 0), left, cap_left),
                                 (table.cell(0, 1), right, cap_right)):
         cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = cell.paragraphs[0].add_run()
-        run.add_picture(os.path.join(SHOTS, img), width=Cm(7.6))
+        run.add_picture(os.path.join(SHOTS, img), width=Cm(7.6))    # 半幅宽
         cp = cell.add_paragraph()
         cp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r = cp.add_run(cap_text)
+        r = cp.add_run(cap_text)                  # 图下小标签(如 "Fog ON"/"Fog OFF")
         r.italic = True
         r.font.size = Pt(8.5)
-    table.cell(1, 0).merge(table.cell(1, 1))
+    table.cell(1, 0).merge(table.cell(1, 1))      # 第二行两格合并
     c = table.cell(1, 0).paragraphs[0]
     c.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = c.add_run(cap)
+    r = c.add_run(cap)                            # 总说明(Figure N. ...)
     r.italic = True
     r.font.size = Pt(9)
 
 
 def table(header, rows, widths=None):
+    # 通用表格生成：表头加粗，正文 9 磅，带网格线
     t = doc.add_table(rows=1, cols=len(header))
-    t.style = "Table Grid"
+    t.style = "Table Grid"                         # 有边框的表格样式
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
     for i, text in enumerate(header):
         cell = t.rows[0].cells[i]
-        cell.text = ""
+        cell.text = ""                             # 先清空默认空段落里的文字
         run = cell.paragraphs[0].add_run(text)
         run.bold = True
         run.font.size = Pt(9)
     for row in rows:
-        cells = t.add_row().cells
+        cells = t.add_row().cells                  # 每行数据新增一行
         for i, text in enumerate(row):
             cells[i].text = ""
             run = cells[i].paragraphs[0].add_run(str(text))
             run.font.size = Pt(9)
     if widths:
+        # 指定每列宽度(厘米)：宽表格必须手动设，否则 Word 会自动挤在一起
         for row in t.rows:
             for i, w in enumerate(widths):
                 row.cells[i].width = Cm(w)
-    doc.add_paragraph().paragraph_format.space_after = Pt(2)
+    doc.add_paragraph().paragraph_format.space_after = Pt(2)   # 表后留一点空隙
     return t
 
 
 # ---------------------------------------------------------------- title block
+# 封面标题块：主标题(24磅深蓝) + 副标题(13磅斜体) + 元信息(学号/日期/仓库)
 title = doc.add_paragraph()
 title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 run = title.add_run("Worm's Garden Adventure 3D")
@@ -163,7 +184,7 @@ run.italic = True
 
 meta = doc.add_paragraph()
 meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
-run = meta.add_run(
+run = meta.add_run(                              # 课程信息/学生信息/仓库地址
     "Laboratory 10 + 11 (Part A + Part B)  |  Course GEIAL31L-B2a  |  "
     "Computer Graphics\n"
     "Student: ____________________    Neptun code: ______________    "
@@ -172,6 +193,7 @@ run = meta.add_run(
 run.font.size = Pt(9.5)
 
 # ---------------------------------------------------------------- 1
+# 第 1 节：引言与目标
 h("1. Introduction and objectives")
 p("This report documents the conversion of the 2D grid game of the first half of the "
   "semester into a complete 3D game. The new game, Worm's Garden Adventure 3D, is built "
@@ -186,6 +208,7 @@ p("Part A (70 marks) required a working 3D game that preserves the 2D gameplay. 
   "graphics-oriented extensions: exponential-squared depth fog and bilinear texture "
   "filtering, both switchable at run time with the F and B keys.")
 
+# 第 2 节：从 2D 到 3D 有哪些变化
 h("2. What changed from 2D to 3D")
 bullet("Cells are no longer pixels. One maze cell is 50 world units (CELL = 50); the "
        "maze is 23 x 15 cells, i.e. 1150 x 750 world units. Walls are 40 units high and "
@@ -199,6 +222,7 @@ bullet("The camera is a full orbit camera that can rotate, zoom and switch betwe
        "perspective and orthographic projection, and the game is resolution "
        "independent (1250x900 window, four internal framebuffer sizes).")
 
+# 第 3 节：代码架构（模块分工表 + 手册 M1-M12 阶段对照表）
 h("3. Architecture")
 p("The code is split into three modules plus tools and tests, so that the renderer can "
   "be studied independently of the game rules.")
@@ -225,15 +249,16 @@ table(["Handbook stage", "Implementation"],
        ("M12 optimization", "frustum culling, distance culling, per-cell batches, resolution scaling")],
       widths=[4.2, 12.4])
 
+# 第 4 节：坐标、变换与摄像机
 h("4. Coordinates, transforms and camera")
 p("World space is right-handed with y up. The ground is the plane y = 0; a cell (col, row) "
   "has its centre at:")
-eq("P = ((col + 0.5) * CELL, 0, (row + 0.5) * CELL),  CELL = 50")
+eq("P = ((col + 0.5) * CELL, 0, (row + 0.5) * CELL),  CELL = 50")   # 格子中心公式
 p("The cell-to-world mapping is verified by a unit test: the original 2D start cell (0, 7) "
   "becomes (25, 0, 375) world units, i.e. (0.5, 7.5) cells. Rotations follow the "
   "right-hand rule and are composed as matrices; a point is transformed as a column "
   "vector with a homogeneous 1, so the model matrix is applied as T @ R @ S.")
-eq("p' = T * R * S * p,     p = (x, y, z, 1)^T")
+eq("p' = T * R * S * p,     p = (x, y, z, 1)^T")        # 模型矩阵复合顺序
 p("A worked example from the handbook is implemented as a test: rotate +90 degrees "
   "around y and translate by (2, 0, 3); the point (1, 0, 0) becomes (2, 0, 2). Directions "
   "use w = 0, so they ignore translation. Uniform scale commutes with rotation, non-uniform "
@@ -241,21 +266,22 @@ p("A worked example from the handbook is implemented as a test: rotate +90 degre
 p("The camera is defined by an eye point and a target. Its basis is built with a look-at "
   "construction:")
 eq("forward = normalize(target - eye);  right = normalize(cross(forward, up_world));  "
-   "up = cross(right, forward)")
+   "up = cross(right, forward)")                       # look-at 三轴构造公式
 p("The view matrix maps world points into camera space with the camera looking down -z, "
   "which is the convention used by the projection step. Six presets are available "
   "and the same rig is used by the screenshot tool with fixed viewpoints "
   "(overview, corridor, close-up, orthographic overview). The player can rotate and zoom "
   "the orbit rig with the mouse at any time.")
 
+# 第 5 节：透视投影与正交投影（配 Figure 1 并排对比图）
 h("5. Perspective and orthographic projection")
 p("Perspective uses a pinhole model. The focal length is derived from the vertical field "
   "of view so that changing the window aspect ratio never stretches the image:")
-eq("f = (H / 2) / tan(FOV / 2)")
-eq("sx = W/2 + f * (x_c / z_c),   sy = H/2 - f * (y_c / z_c),   z_c < 0")
+eq("f = (H / 2) / tan(FOV / 2)")                        # 焦距由 FOV 推出
+eq("sx = W/2 + f * (x_c / z_c),   sy = H/2 - f * (y_c / z_c),   z_c < 0")   # 针孔投影成像公式
 p("The near plane is z_c = -near and the far plane is z_c = -far. Orthographic projection "
   "divides by a fixed world height instead of by depth:")
-eq("sx = W/2 + (x_c / ortho_height) * H,   sy = H/2 - (y_c / ortho_height) * H")
+eq("sx = W/2 + (x_c / ortho_height) * H,   sy = H/2 - (y_c / ortho_height) * H")   # 正交投影公式
 p("Both projections share the same view matrix, so the V key switches projection without "
   "moving the camera. Figure 1 shows the same eye point with both projections: in "
   "perspective the far walls converge and the maze fits the frame, in orthographic all "
@@ -265,6 +291,7 @@ pair("01_perspective_full.png", "02_orthographic_full.png",
      "Figure 1. Same camera, two projections. The perspective view converges towards the "
      "horizon; the orthographic view keeps wall edges parallel.")
 
+# 第 6 节：裁剪、剔除、光栅化与深度缓冲（配 Figure 2 / 3）
 h("6. Clipping, culling, rasterization and the depth buffer")
 p("Each mesh is transformed to camera space once. A conservative sphere test rejects "
   "meshes completely outside the frustum (using the mesh bounding radius), and triangles "
@@ -275,7 +302,7 @@ p("Each mesh is transformed to camera space once. A conservative sphere test rej
 p("After projection, screen-space winding determines the facing: a counter-clockwise "
   "triangle is front-facing, a clockwise one is culled. The rasterizer then computes the "
   "bounding box of the triangle, builds three edge functions")
-eq("E0 = (x1-x0)(y-y0) - (y1-y0)(x-x0),  and cyclically for E1, E2")
+eq("E0 = (x1-x0)(y-y0) - (y1-y0)(x-x0),  and cyclically for E1, E2")    # 边函数公式
 p("and keeps fragments where all three edge functions have the same sign. The barycentric "
   "weights b0, b1, b2 are the normalized edge values, so colour, UV, fog and depth can all "
   "be interpolated with the same weights. For perspective, the depth key is 1/w and the "
@@ -293,11 +320,13 @@ figure("05_occlusion.png", 12.0,
 figure("04_depth_buffer.png", 12.0,
        "Figure 3. Z-buffer visualisation of the game scene (bright = near, blue = far).")
 
+# 第 7 节：光照与纹理映射（配 Figure 4 玩法截图）
 h("7. Lighting and texture mapping")
 p("Shading uses a Phong-style model with an ambient term, one directional light and dynamic "
   "point lights (the worm's lantern and firework flashes). For each vertex "
   "the diffuse term is")
 eq("C = k_a * C_base + k_d * C_base * max(0, n . l) + sum_i k_p * C_i * max(0, n . l_i) / (1 + (d_i / r_i)^2)")
+# 光照公式：环境光 + 平行光漫反射 + 点光源(带距离衰减)求和
 p("Two shading modes are supported: flat shading (one normal per triangle, one colour for "
   "the whole face) and Gouraud shading (per-vertex normals, colour interpolated with the "
   "barycentric weights). Spheres, the worm and the birds use smooth vertex normals; boxes "
@@ -309,6 +338,7 @@ figure("06_gameplay.png", 13.0,
        "Figure 4. Gameplay frame: segmented worm, apple, bird and water hazard, all lit by "
        "ambient + directional light plus the worm's point light.")
 
+# 第 8 节：玩法转换（迷宫/碰撞/跳跃物理/危险判定）
 h("8. Gameplay conversion")
 p("The maze generator is unchanged in spirit: recursive backtracking on a 23 x 15 grid, "
   "then wall boxes are emitted for each closed edge and merged per cell for batching. "
@@ -322,7 +352,7 @@ p("Jumping is a physical simulation, not a sine offset. Space sets the vertical 
   "to v0 = 168 units/s; gravity g = 520 units/s^2 is integrated with the same dt as the "
   "rest of the game:")
 eq("v <- v - g * dt,   y <- y + v * dt,   h_max = v0^2 / (2g) = 27.1 units,   "
-   "t_flight = 2v0/g = 0.646 s")
+   "t_flight = 2v0/g = 0.646 s")            # 跳跃的积分公式与解析解
 p("The camera aims at the ground position, so the worm visibly rises inside the frame; a "
   "contact shadow shrinks as it climbs. Hazards are height-aware: water only kills when "
   "the worm's feet are below 14 units, and a bird collision is a true 3D sphere test, so a "
@@ -333,10 +363,11 @@ p("The camera aims at the ground position, so the worm visibly rises inside the 
   "is five spheres following a 14-sample history of head positions, which produces the "
   "segmented, snake-like motion required by the brief.")
 
+# 第 9 节：Part B 扩展 1 —— 深度雾（配 Figure 5 前后对比）
 h("9. Part B extension 1: depth fog")
 p("The first extension is an atmospheric depth cue. After shading, the fragment colour is "
   "blended towards a fog colour with")
-eq("f = 1 - exp(-(density * z)^2),   C_out = (1 - f) * C_shaded + f * C_fog")
+eq("f = 1 - exp(-(density * z)^2),   C_out = (1 - f) * C_shaded + f * C_fog")   # 指数平方雾公式
 p("where z is the perspective-correct view depth and density = 0.0016. The squared "
   "exponential keeps nearby geometry almost unaffected while distant walls fade quickly, "
   "which reinforces the sense of depth and hides the far clipping boundary. The factor is "
@@ -348,12 +379,13 @@ pair("07_extension1_fog_on.png", "08_extension1_fog_off.png",
      "Figure 5. Extension 1: exponential-squared depth fog. Far walls lose contrast and "
      "take the sky colour; near walls are unchanged.")
 
+# 第 10 节：Part B 扩展 2 —— 双线性纹理过滤（配 Figure 6 前后对比）
 h("10. Part B extension 2: bilinear texture filtering")
 p("The second extension changes image quality rather than atmosphere. Nearest-neighbour "
   "sampling was replaced by a bilinear reconstruction of the texture signal. With texture "
   "coordinates (u, v) in texels, the four surrounding texels are fetched with a "
   "power-of-two wrap and blended with the fractional offsets tx, ty:")
-eq("C = (1-ty) * [(1-tx) * T00 + tx * T10] + ty * [(1-tx) * T01 + tx * T11]")
+eq("C = (1-ty) * [(1-tx) * T00 + tx * T10] + ty * [(1-tx) * T01 + tx * T11]")   # 双线性插值公式
 p("The cost is four texture fetches and six multiplies per fragment instead of one fetch. "
   "The benefit is visible in Figure 6: on a magnified checkerboard the nearest image has "
   "hard, aliased staircase edges, while the bilinear image is smooth and continuous. In "
@@ -364,6 +396,7 @@ pair("09_extension2_nearest.png", "10_extension2_bilinear.png",
      "Figure 6. Extension 2: nearest versus bilinear sampling on the same magnified "
      "checkerboard (8x8 texels, 3 UV repeats).")
 
+# 第 11 节：测试与性能（读 CSV 生成性能表 + 抗锯齿/锐化说明 + 配 Figure 7）
 h("11. Testing, performance and robustness")
 p("Seventeen numerical tests run before any visual debugging. They cover the transform "
   "worked examples, the cell-to-world mapping, perspective versus orthographic scaling, "
@@ -375,11 +408,14 @@ p("python -m unittest discover -s tests -v  ->  Ran 17 tests ... OK", italic=Tru
 perf_rows = []
 csv_path = os.path.join(DOCS, "performance.csv")
 if os.path.exists(csv_path):
+    # 如果 benchmark 已经跑过，就直接读 CSV 里测出来的真实数据填进表格
+    # (报告里的数字不是手写的，而是脚本从测量文件里读出来的)
     with open(csv_path, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             perf_rows.append((row["preset"], f"{row['width']}x{row['height']}",
                               row["triangles"], row["pixels"], row["avg_ms"], row["fps"]))
 if not perf_rows:
+    # 没跑过 benchmark 时留一个占位行，避免表格为空导致报错
     perf_rows = [("see docs/performance.csv", "", "", "", "", "")]
 p("The renderer was measured on the same camera and the same frame for 45 frames per "
   "preset after a warm-up. The internal framebuffer is the dominant cost because every "
@@ -413,6 +449,7 @@ pair("11_resize_16x9.png", "12_resize_4x3.png",
      "16:9", "4:3",
      "Figure 7. Aspect-ratio test: identical scene at 640x360 and 640x480.")
 
+# 第 12 节：局限与可改进方向（写得诚实，反而是加分项）
 h("12. Limitations and possible improvements")
 bullet("Frame rate is limited by the pure-Python/NumPy fragment loop. A tile-based "
        "rasterizer, or vectorizing several triangles at once, would give a large constant "
@@ -424,6 +461,7 @@ bullet("There are no soft shadows; the contact shadow under the worm is a projec
 bullet("Birds fly at a fixed height band and cannot dive at the player; a simple steering "
        "behaviour would make the hazard more interesting.")
 
+# 第 13 节：结论
 h("13. Conclusion")
 p("The project converts every gameplay rule of the 2D prototype into a consistent 3D "
   "world and renders it with a pipeline that is implemented and documented stage by stage. "
@@ -433,6 +471,7 @@ p("The project converts every gameplay rule of the 2D prototype into a consisten
   "graphics-oriented, both measurable, and both demonstrated with before/after evidence "
   "and the equations that drive them.")
 
+# 附录 A：按键说明表
 h("Appendix A. Controls")
 table(["Key", "Action"],
       [("W A S D / arrows", "Move (camera-relative)"),
@@ -446,13 +485,14 @@ table(["Key", "Action"],
        ("R / Esc", "Restart / quit")],
       widths=[5.0, 11.5])
 
+# 附录 B：如何复现全部结果
 h("Appendix B. Reproduction")
-p("python game3d.py", italic=True)
-p("python -m unittest discover -s tests -v", italic=True)
-p("python tools/capture_screenshots.py", italic=True)
-p("python tools/benchmark.py", italic=True)
-p("python tools/render_video.py", italic=True)
+p("python game3d.py", italic=True)                        # 跑游戏
+p("python -m unittest discover -s tests -v", italic=True)  # 跑测试
+p("python tools/capture_screenshots.py", italic=True)      # 重新生成截图
+p("python tools/benchmark.py", italic=True)                # 重新生成性能数据
+p("python tools/render_video.py", italic=True)             # 重新生成演示视频
 
-out = os.path.join(DOCS, "Technical_Report_Lab10_11.docx")
+out = os.path.join(DOCS, "Technical_Report_Lab10_11.docx")   # 输出文件名
 doc.save(out)
-print("written", out)
+print("written", out)      # 提示已生成

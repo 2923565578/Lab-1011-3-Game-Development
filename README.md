@@ -10,6 +10,13 @@ This is the submission for **Lab 10 + Lab 11 (GEIAL31L-B2a, Part A + Part B)**.
 Lab 10 and Lab 11 are two parts of **one** assignment: one code base, one set of
 screenshots, **one English technical report**.
 
+> **中文注释版 / Commented edition:** every line of all eight `.py` files now
+> carries a Chinese comment for the oral exam (the instructor allowed Chinese
+> comments because the English of Chinese students is limited). The comments only
+> *explain* the code; the executable code is unchanged token-by-token (verified
+> with Python `tokenize`). See `口试注释说明.md` for the four optimizations and
+> the honest performance numbers.
+
 ![Gameplay](screenshots/06_gameplay.png)
 
 ## 1. What is in the repository

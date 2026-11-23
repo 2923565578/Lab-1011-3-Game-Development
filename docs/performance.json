@@ -6,10 +6,10 @@
       "width": 250,
       "height": 180,
       "triangles": 1352,
-      "pixels": 62176,
-      "avg_ms": 63.39,
-      "median_ms": 62.78,
-      "fps": 15.8
+      "pixels": 46407,
+      "avg_ms": 82.45,
+      "median_ms": 83.77,
+      "fps": 12.1
     },
     {
       "preset": "BALANCED",
@@ -17,10 +17,10 @@
       "width": 375,
       "height": 270,
       "triangles": 1352,
-      "pixels": 140098,
-      "avg_ms": 99.17,
-      "median_ms": 97.94,
-      "fps": 10.1
+      "pixels": 104833,
+      "avg_ms": 133.79,
+      "median_ms": 134.21,
+      "fps": 7.5
     },
     {
       "preset": "HIGH",
@@ -28,10 +28,10 @@
       "width": 625,
       "height": 450,
       "triangles": 1352,
-      "pixels": 386856,
-      "avg_ms": 233.58,
-      "median_ms": 231.94,
-      "fps": 4.3
+      "pixels": 291394,
+      "avg_ms": 301.31,
+      "median_ms": 297.92,
+      "fps": 3.3
     },
     {
       "preset": "NATIVE",
@@ -39,32 +39,32 @@
       "width": 1250,
       "height": 900,
       "triangles": 1352,
-      "pixels": 1549075,
-      "avg_ms": 740.48,
-      "median_ms": 733.93,
-      "fps": 1.4
+      "pixels": 1165028,
+      "avg_ms": 1001.5,
+      "median_ms": 1006.04,
+      "fps": 1.0
     }
   ],
   "extensions": [
     {
       "setting": "fog on, nearest",
-      "avg_ms": 212.8,
-      "fps": 4.7
+      "avg_ms": 293.81,
+      "fps": 3.4
     },
     {
       "setting": "fog off, nearest",
-      "avg_ms": 215.95,
-      "fps": 4.6
+      "avg_ms": 307.81,
+      "fps": 3.2
     },
     {
       "setting": "fog on, bilinear",
-      "avg_ms": 444.24,
-      "fps": 2.3
+      "avg_ms": 589.36,
+      "fps": 1.7
     },
     {
       "setting": "fog off, bilinear",
-      "avg_ms": 444.6,
-      "fps": 2.2
+      "avg_ms": 588.85,
+      "fps": 1.7
     }
   ]
 }
